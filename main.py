@@ -20,20 +20,73 @@ def input_error(func):
     return inner
 
 
+# @input_error
+# def add(book, data):
+
+#     data = data[0]
+#     name = Name(data[0])
+#     record = Record(name)
+#     record = book.add_record(record)
+
+#     if len(data) > 1:
+#         phone = data[1]
+#         result = record.add_phone(phone)
+
+#         if len(data) > 2:
+#             birthday = data[2]
+#             result = record.add_birthday(birthday)
+
+#         book.delete(str(record.name.value))
+#         book.add_record(result)
+#         return result
+
+#     return record
+
+
 @input_error
-def add(book, data):
+def add_contact_phone_birthday(book, data):
 
     data = data[0]
-    name = Name(data[0])
-    record = Record(name)
-    record = book.add_record(record)
+    name = data[0]
+    phone = data[1]
+    birthday = None
+    if len(data) > 2:
+        birthday = data[2]
 
-    if len(data) > 1:
-        phone = data[1]
-        result = record.add_phone(phone)
-        book.delete(str(record.name.value))
-        book.add_record(result)
-        return result
+    record = Record(name, phone, birthday)
+    book.add_record(record)
+
+    return record
+
+
+@input_error
+def add_contact(book, data):
+
+    record = Record(Name(data[0][0]))
+    book.add_record(record)
+    return record
+
+
+@input_error
+def add_phone(book, data):
+    data = data[0]
+    name = data[0]
+    record = book.find(name)
+    phone = data[1]
+    record.add_phone(phone)
+    # result = record.add_phone(phone)
+    # book.delete(record)
+    # book.add_record(result)
+    return record
+
+
+@input_error
+def add_birthday(book, data):
+    data = data[0]
+    name = data[0]
+    record = book.find(name)
+    birthday = data[1]
+    record.add_birthday(birthday)
 
     return record
 
@@ -43,21 +96,39 @@ def console_input():
 
 
 @input_error
-def edit(book, data):
+def edit_name(book, data):
     data = data[0]
-    if len(data) == 2:
-        old_name, new_name = data
+    old_name, new_name = data
+    record = book.edit_record(old_name, new_name)
+    return record
 
-        record = book.edit_record(old_name, new_name)
-        return record
 
-    elif len(data) == 3:
-        name, old_phone, new_phone = data
-        record = book.find(name)
-        record = record.edit_phone(old_phone, new_phone)
-        return record
-    else:
-        raise IndexError
+@input_error
+def edit_phone(book, data):
+    data = data[0]
+    name, old_phone, new_phone = data
+    print(new_phone, old_phone)
+    record = book.find(name)
+    record.edit_phone(old_phone, new_phone)
+    return record
+
+
+@input_error
+def edit_birthday(book, data):
+    data = data[0]
+    name, birthday = data
+    record = book.find(name)
+    record.add_birthday(birthday)
+    return record
+
+
+@input_error
+def days_to_birthday(book, data):
+    name = data[0][0]
+    record = book.find(name)
+    if record:
+        result = record.days_to_birthday()
+        return f"Days to birthday: {result}"
 
 
 @input_error
@@ -77,7 +148,7 @@ def find(book, data):
         result = book.find(search)
         if not result:
             raise KeyError
-        return f"\n{result}\n"
+        return result
 
 
 def hello(book, data):
@@ -88,6 +159,7 @@ def help(book, data):
     return TEXT
 
 
+@input_error
 def good_bye(book, data):
     try:
         with open(FILE_NAME, 'wb') as fh:
@@ -113,14 +185,15 @@ def remove(book, data):
         record = book.find(name)
         book.delete(record)
         if record:
-            result = record.remove_phone(phone)
+            record.remove_phone(phone)
             # book.delete(record)
-            book.add_record(result)
-            return result
+            # book.add_record(result)
+            return record
         else:
             raise KeyError
 
 
+@input_error
 def search(book, data):
     text = data[0][0]
     result = book.search(text)
@@ -140,17 +213,20 @@ def show_all(book, data):
     else:
         # for name, record in book.data.items():
         #     print(f'\n{record}\n')
-        result = book.iterator(2)
+        # result = book.iterator(2)
 
-        for record in next(result):
-            print(record)
+        for record in book.iterator(2):
+            # print(record)
+            print(*record)
+            input('')
 
 
 @input_error
 def parser(user_input, commands):
     for command in commands:
         if user_input.startswith(command):
-            data = user_input.replace(command, '').split()
+            # data = user_input.replace(command, '').split()
+            data = user_input.split()[1:]
             return commands[command], data
     else:
         raise IndexError
@@ -160,16 +236,29 @@ def main():
     book = AddressBook()
 
     commands = {
-        'add': add,
-        'close': good_bye,
-        'edit': edit,
-        'exit': good_bye,
+
+
+
+
+        # New contact, phone, birthday - - - > 1 Alex 1111111111 31.12.1700
+        "1": add_contact_phone_birthday,
+        "2": add_contact,                # New contact                  - - - > 2 Alex
+        "3": add_phone,                  # Add phone                    - - - > 3 Alex 2222222222
+        # Add birthday                 - - - > 4 Alex 31.12.1700
+        "4": add_birthday,
+        "5": edit_name,                  # Edit name                    - - - > 5 Alex Alexandr
+        # # Edit phone                   - - - > 6 Alexandr 2222222222 3333333333
+        "6": edit_phone,
+        # # Edit birthday                - - - > 7 Alexandr 31.12.1701
+        '7': edit_birthday,
+        "8": days_to_birthday,           # Day to birthday              - - - > 8 Alexandr
+        "search": search,                     # Search                       - - - > 9 text
+        "remove": remove,
+        "show all": show_all,                  # Show all contact            - - - > show all
+        'help': help,                      # Commands list               - - - > help
+        # # Good bye!                   - - - > good bye / exit / close
         'good bye': good_bye,
-        'hello': hello,
-        'help': help,
-        'search': search,
-        'remove': remove,
-        'show all': show_all,
+
     }
     try:
         with open(FILE_NAME, 'rb') as fh:
@@ -179,18 +268,18 @@ def main():
         print('New phone book has been created\n')
 
     while True:
-        # try:
-        user_input = console_input()
-        function, *data = parser(user_input, commands)
-        result = function(book, data)
+        try:
+            user_input = console_input()
+            function, *data = parser(user_input, commands)
+            result = function(book, data)
 
-        if result is not None:
-            print(result)
-        if result == 'Good bye!':
-            break
+            if result is not None:
+                print(result)
+            if result == 'Good bye!':
+                break
 
-        # except:
-        #     print('\n Check your input! \n')
+        except:
+            print('\n Check your input! \n')
 
 
 if __name__ == '__main__':
@@ -199,16 +288,21 @@ if __name__ == '__main__':
         """
                        Commands list
         
-    create new contact   - - - > 'add name' or 'add name phone(10 digits)'
-    add phone to contact - - - > 'add name phone(10 digits)'
-    find name or phone   - - - > 'find name' or 'find phone'
-    edit contact name    - - - > 'edit old_name new_name'
-    edit conctact phone  - - - > 'edit name old_phone new_phone(10 digits)'
-    remove contact       - - - > 'remove name'
-    remove phone         - - - > 'remove name phone'
-    searching            - - - > 'search text'
-    show all phone book  - - - > 'show all'
-    commands list        - - - > 'help'
+    1. New contact, phone, birthday - - - > 1 Alex 1111111111 31.12.1700
+    2. New contact                  - - - > 2 Alex
+    3. Add phone                    - - - > 3 Alex 2222222222
+    4. Add birthday                 - - - > 4 Alex 31.12.1700
+    5. Edit name                    - - - > 5 Alex Alexandr
+    6. Edit phone                   - - - > 6 Alexandr 2222222222 3333333333
+    7. Edit birthday                - - - > 7 Alexandr 31.12.1701
+    8. Day to birthday              - - - > 8 Alexandr
+    9. Search                       - - - > 9 text
+    10. remove contact              - - - > remove name
+    11. remove phone                - - - > remove name phone
+    12. Show all contact            - - - > show all
+    13. Commands list               - - - > help
+    14. Good bye!                   - - - > good bye / exit / close
+    
     """
     print(TEXT)
     main()

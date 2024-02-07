@@ -42,7 +42,7 @@ class Phone(Field):
 
     @staticmethod
     def validator(value):
-        return len(str(value)) == 10
+        return len(str(value)) == 10 and value.isdigit()
 
 
 class Birthday(Field):
@@ -59,19 +59,24 @@ class Record:
     def __init__(self, name, phone=None, birthday=None):
         self.name = Name(name)
 
-        if phone == None:
-            self.phones = []
-        else:
-            self.phones = [Phone(phone)]
+        self.phones = []
+
+        if phone:
+            self.phones.append(Phone(phone))
 
         self.birthday = Birthday(birthday) if birthday else None
 
     def add_phone(self, phone):
         phone = Phone(phone)
-        if str(phone.value) not in [str(p.value) for p in self.phones]:
+        # if str(phone.value) not in [str(p.value) for p in self.phones]:
+        if phone.value not in [p.value for p in self.phones]:
             self.phones.append(phone)
-            print('\n Phone has been added \n')
-        return self
+
+        return phone
+
+    def add_birthday(self, birthday):
+        self.birthday = Birthday(birthday)
+        return self.birthday
 
     def days_to_birthday(self):
 
@@ -94,10 +99,10 @@ class Record:
         self.name.value = Name(new_name)
 
     def edit_phone(self, old_phone, new_phone):
-        phone = self.find_phone(old_phone)
-        self.remove_phone(phone.value)
-        self.add_phone(new_phone)
-        return self
+        Phone(new_phone)
+        if self.remove_phone(old_phone) is not None:
+            return self.add_phone(new_phone)
+        return
 
     def find_phone(self, search):
 
@@ -108,29 +113,34 @@ class Record:
         raise ValueError
 
     def remove_phone(self, phone):
+        len_before = len(self.phones)
         self.phones = [p for p in self.phones if p.value != phone]
+        if len_before == len(self.phones):
+            return None
         return self
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+        return f"Contact name: {str(self.name)}, phones: {'; '.join(str(p) for p in self.phones)}, birthday: {str(self.birthday)}"
 
     def __repr__(self):
-        return self.name.value
+        return f"Contact name: {str(self.name)}, phones: {'; '.join(str(p) for p in self.phones)}"
 
 
 class AddressBook(UserDict):
     def add_record(self, record):
         for user, data in self.data.items():
             if str(data.name.value) == str(record.name.value):
+                # if data.name.value == record.name.value:
                 return self.data[user]
         self.data[record.name.value] = record
 
         return record
 
     def find(self, name: str):  # -> Record:
-        #inner method. not for user's search
+        # inner method. not for user's search
         for key, value in self.data.items():
             if name == str(key.value):
+                # if name == key:
                 return self.data[key]
 
     def iterator(self, n=2):
@@ -149,8 +159,8 @@ class AddressBook(UserDict):
                 if person == name:
                     self.data.pop(person)
                     return
-        raise KeyError
-    
+        return
+
     def search(self, text):
         searched_text = text.strip().lower()
         result = []
@@ -160,8 +170,11 @@ class AddressBook(UserDict):
             if searched_text in str(record.name.value).lower() + ' '.join([phone.value for phone in record.phones]):
                 result.append(record)
         return result
-                
+
     def edit_record(self, old_name, new_name: str):
+        slot = self.find(new_name)
+        if slot:
+            return f'This name {slot} already exists!'
         record = self.find(old_name)
         if record:
 
