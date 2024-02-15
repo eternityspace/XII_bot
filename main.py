@@ -20,29 +20,6 @@ def input_error(func):
     return inner
 
 
-# @input_error
-# def add(book, data):
-
-#     data = data[0]
-#     name = Name(data[0])
-#     record = Record(name)
-#     record = book.add_record(record)
-
-#     if len(data) > 1:
-#         phone = data[1]
-#         result = record.add_phone(phone)
-
-#         if len(data) > 2:
-#             birthday = data[2]
-#             result = record.add_birthday(birthday)
-
-#         book.delete(str(record.name.value))
-#         book.add_record(result)
-#         return result
-
-#     return record
-
-
 @input_error
 def add_contact_phone_birthday(book, data):
 
@@ -74,9 +51,7 @@ def add_phone(book, data):
     record = book.find(name)
     phone = data[1]
     record.add_phone(phone)
-    # result = record.add_phone(phone)
-    # book.delete(record)
-    # book.add_record(result)
+
     return record
 
 
